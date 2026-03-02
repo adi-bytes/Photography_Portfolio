@@ -1,10 +1,10 @@
 import MasonryGrid from "@/components/MasonryGrid";
-import StarryBackground from "@/components/StarryBackground";
+import InteractiveBackground from "@/components/InteractiveBackground";
 import { Photo } from "@/lib/types";
 
 export const dynamic = 'force-dynamic';
 
-// Dummy data for initial gallery aesthetics before DB integration
+// ... (placeholder array omitted for brevity)
 const placeholderPhotos: Photo[] = [
   {
     id: "1",
@@ -112,7 +112,7 @@ export default async function Home() {
 
   return (
     <main className="relative min-h-screen bg-transparent w-full flex flex-col items-center">
-      <StarryBackground />
+      <InteractiveBackground />
 
       {/* Museum Header */}
       <header className="relative z-10 w-full text-center py-20 px-8 flex flex-col items-center justify-center border-b border-white/5 bg-gradient-to-b from-black to-transparent">

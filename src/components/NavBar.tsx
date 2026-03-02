@@ -13,7 +13,7 @@ export default function NavBar() {
     }
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-6 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm Mix-blend-difference">
+        <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-6 bg-black/40 backdrop-blur-md border-b border-white/10">
             <Link href="/" className="font-serif text-2xl text-white tracking-widest hover:opacity-80 transition-opacity">
                 OBSIDIAN
             </Link>
