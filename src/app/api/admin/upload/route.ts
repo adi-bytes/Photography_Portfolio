@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import cloudinary from "@/lib/cloudinary";
-import { generateAltText } from "@/lib/gemini";
 import exifr from "exifr";
 
 export async function POST(req: NextRequest) {
@@ -49,6 +48,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 4. Generate AI Alt Text
+        const { generateAltText } = await import("@/lib/gemini");
         const altText = await generateAltText(buffer, file.type);
 
         // 5. Generate Title and Slug
