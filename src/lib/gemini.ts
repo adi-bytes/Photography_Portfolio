@@ -1,11 +1,11 @@
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY || "",
-});
-
 export async function generateAltText(imageBuffer: Buffer, mimeType: string) {
     try {
+        const ai = new GoogleGenAI({
+            apiKey: process.env.GEMINI_API_KEY || "DUMMY_KEY_FOR_BUILD",
+        });
+
         const response = await ai.models.generateContent({
             model: 'gemini-1.5-flash',
             contents: [
