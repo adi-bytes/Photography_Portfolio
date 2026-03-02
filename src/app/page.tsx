@@ -1,5 +1,8 @@
 import MasonryGrid from "@/components/MasonryGrid";
+import StarryBackground from "@/components/StarryBackground";
 import { Photo } from "@/lib/types";
+
+export const dynamic = 'force-dynamic';
 
 // Dummy data for initial gallery aesthetics before DB integration
 const placeholderPhotos: Photo[] = [
@@ -96,6 +99,7 @@ const placeholderPhotos: Photo[] = [
 ];
 
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -107,9 +111,11 @@ export default async function Home() {
   const displayPhotos = photos && photos.length > 0 ? photos : placeholderPhotos;
 
   return (
-    <main className="min-h-screen bg-black w-full flex flex-col items-center">
+    <main className="relative min-h-screen bg-transparent w-full flex flex-col items-center">
+      <StarryBackground />
+
       {/* Museum Header */}
-      <header className="w-full text-center py-20 px-8 flex flex-col items-center justify-center border-b border-white/5 bg-gradient-to-b from-black to-neutral-950/50">
+      <header className="relative z-10 w-full text-center py-20 px-8 flex flex-col items-center justify-center border-b border-white/5 bg-gradient-to-b from-black to-transparent">
         <h1 className="font-serif text-5xl md:text-7xl font-bold tracking-tight text-white mb-6">
           OBSIDIAN
         </h1>
@@ -119,13 +125,15 @@ export default async function Home() {
       </header>
 
       {/* Gallery Grid */}
-      <div className="w-full flex-grow bg-black">
+      <div className="relative z-10 w-full flex-grow">
         <MasonryGrid photos={displayPhotos} />
       </div>
 
       {/* Minimal Footer */}
-      <footer className="w-full py-12 text-center text-neutral-600 font-sans text-xs uppercase tracking-widest border-t border-white/5">
-        &copy; {new Date().getFullYear()} Obsidian Gallery. All rights reserved.
+      <footer className="relative z-10 w-full py-12 text-center text-neutral-600 font-sans text-xs uppercase tracking-widest border-t border-white/5 bg-gradient-to-t from-black to-transparent">
+        <Link href="/admin/login" className="hover:text-white transition-colors cursor-pointer" title="Admin Portal">
+          &copy;
+        </Link> {new Date().getFullYear()} Obsidian Gallery. All rights reserved.
       </footer>
     </main>
   );

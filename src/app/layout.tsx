@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "High-performance photography portfolio with a zero-cost architecture.",
 };
 
+import NavBar from "@/components/NavBar";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,6 +29,7 @@ export default function RootLayout({
       <body
         className={`${playfair.variable} ${inter.variable} antialiased bg-black text-white selection:bg-white/20`}
       >
+        <NavBar />
         {children}
       </body>
     </html>
