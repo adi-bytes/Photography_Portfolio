@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import cloudinary from "@/lib/cloudinary";
-import { GoogleGenAI } from "@google/genai";
 import exifr from "exifr";
 
 export const dynamic = 'force-dynamic';
@@ -53,27 +52,35 @@ export async function POST(req: NextRequest) {
         // 4. Generate AI Alt Text
         let altText = "A cinematic photograph from the Obsidian Gallery.";
         try {
-            const ai = new GoogleGenAI({
-                apiKey: process.env.GEMINI_API_KEY || "DUMMY_KEY",
-            });
-            const aiResponse = await ai.models.generateContent({
-                model: 'gemini-1.5-flash',
-                contents: [
-                    {
-                        role: 'user',
-                        parts: [
-                            { text: "Write a highly descriptive, SEO-optimized alt text (1-2 sentences) for this photography portfolio image. Focus on the mood, subject, and lighting, without using the phrase 'A photo of'." },
-                            {
-                                inlineData: {
-                                    data: buffer.toString("base64"),
-                                    mimeType: file.type,
+            const geminiApiKey = process.env.GEMINI_API_KEY;
+            if (geminiApiKey && geminiApiKey !== "DUMMY_KEY") {
+                const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: "Write a highly descriptive, SEO-optimized alt text (1-2 sentences) for this photography portfolio image. Focus on the mood, subject, and lighting, without using the phrase 'A photo of'." },
+                                {
+                                    inlineData: {
+                                        data: buffer.toString("base64"),
+                                        mimeType: file.type,
+                                    }
                                 }
-                            }
-                        ],
+                            ]
+                        }]
+                    })
+                });
+
+                if (aiResponse.ok) {
+                    const aiData = await aiResponse.json();
+                    if (aiData.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        altText = aiData.candidates[0].content.parts[0].text;
                     }
-                ]
-            });
-            if (aiResponse.text) altText = aiResponse.text;
+                }
+            }
         } catch (e) {
             console.warn("Gemini AI failed to generate alt text:", e);
         }
