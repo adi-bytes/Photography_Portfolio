@@ -16,4 +16,7 @@ export interface Photo {
         iso?: string;
         shutterSpeed?: string;
     };
+    categoryTags?: string[];
+    moodColors?: string[];
+    story?: string;
 }

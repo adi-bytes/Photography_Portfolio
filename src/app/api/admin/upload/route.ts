@@ -49,12 +49,21 @@ export async function POST(req: NextRequest) {
             console.warn("Failed to parse EXIF:", e);
         }
 
-        // 4. Generate AI Alt Text
+        // 4 & 5. Generate AI Metadata
         let altText = "A cinematic photograph from the Obsidian Gallery.";
+        const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9-]/g, " ").trim();
+        let title = baseName.charAt(0).toUpperCase() + baseName.slice(1);
+        let categoryTags: string[] = [];
+        let moodColors: string[] = [];
+        let story: string | null = null;
+
+        const uniqueHash = Math.random().toString(36).substring(2, 8);
+        const slug = `${baseName.toLowerCase().replace(/\s+/g, '-')}-${uniqueHash}`;
+
         try {
             const geminiApiKey = process.env.GEMINI_API_KEY;
             if (geminiApiKey && geminiApiKey !== "DUMMY_KEY") {
-                const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+                const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -62,7 +71,7 @@ export async function POST(req: NextRequest) {
                     body: JSON.stringify({
                         contents: [{
                             parts: [
-                                { text: "Write a highly descriptive, SEO-optimized alt text (1-2 sentences) for this photography portfolio image. Focus on the mood, subject, and lighting, without using the phrase 'A photo of'." },
+                                { text: "Analyze this image. Provide a JSON response containing: 1. 'title' (a highly creative, moody, and poetic 1-4 word title). 2. 'altText' (a highly descriptive, SEO-optimized alt text of 1-3 sentences focusing on mood, subject, and lighting, without using 'A photo of'). 3. 'tags' (an array of 3-5 category strings like 'Landscape', 'Astrophotography', 'Architecture', 'Moody'). 4. 'colors' (an array of exactly 3 hex codes that represent the dominant mood and cinematic atmosphere of the image). 5. 'story' (a poetic 1-2 sentence 'director's cut' backstory for the image). Return ONLY valid JSON in the format {\"title\": \"...\", \"altText\": \"...\", \"tags\": [\"...\"], \"colors\": [\"...\"], \"story\": \"...\"} and nothing else. Do not use markdown blocks." },
                                 {
                                     inlineData: {
                                         data: buffer.toString("base64"),
@@ -76,21 +85,28 @@ export async function POST(req: NextRequest) {
 
                 if (aiResponse.ok) {
                     const aiData = await aiResponse.json();
-                    if (aiData.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        altText = aiData.candidates[0].content.parts[0].text;
+                    const text = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        try {
+                            // Gemini often wraps JSON in markdown blocks even when told not to.
+                            // We need to strip ```json and ``` before parsing.
+                            const sanitizedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                            const parsedResponse = JSON.parse(sanitizedText);
+                            if (parsedResponse.title) title = parsedResponse.title;
+                            if (parsedResponse.altText) altText = parsedResponse.altText;
+                            if (parsedResponse.tags && Array.isArray(parsedResponse.tags)) categoryTags = parsedResponse.tags;
+                            if (parsedResponse.colors && Array.isArray(parsedResponse.colors)) moodColors = parsedResponse.colors;
+                            if (parsedResponse.story) story = parsedResponse.story;
+                        } catch (parseError) {
+                            console.warn("Failed to parse Gemini JSON, falling back to raw text for altText", parseError, text);
+                            altText = text; // Just use the raw text as alt text if JSON parsing fails
+                        }
                     }
                 }
             }
         } catch (e) {
-            console.warn("Gemini AI failed to generate alt text:", e);
+            console.warn("Gemini AI failed to generate metadata:", e);
         }
-
-        // 5. Generate Title and Slug
-        // We can use the original filename (stripped of extension) as a base
-        const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9-]/g, " ").trim();
-        const title = baseName.charAt(0).toUpperCase() + baseName.slice(1);
-        const uniqueHash = Math.random().toString(36).substring(2, 8);
-        const slug = `${baseName.toLowerCase().replace(/\s+/g, '-')}-${uniqueHash}`;
 
         // 6. Upload to Cloudinary via stream
         const uploadResult: any = await new Promise((resolve, reject) => {
@@ -123,6 +139,9 @@ export async function POST(req: NextRequest) {
                 alt_text: altText,
                 slug,
                 exif: exifData,
+                category_tags: categoryTags,
+                mood_colors: moodColors,
+                story: story,
             })
             .select()
             .single();

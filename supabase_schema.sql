@@ -10,6 +10,9 @@ create table photos (
   alt_text text not null,
   slug text not null unique,
   exif jsonb,
+  category_tags jsonb default '[]'::jsonb,
+  mood_colors jsonb default '[]'::jsonb,
+  story text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
