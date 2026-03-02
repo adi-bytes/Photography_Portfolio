@@ -1,14 +1,21 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AdminUploader from "@/components/AdminUploader";
+import GalleryManager from "@/components/GalleryManager";
 
 export default async function AdminDashboard() {
     const supabase = await createClient();
-    const { data, error } = await supabase.auth.getUser();
+    const { data: authData, error: authError } = await supabase.auth.getUser();
 
-    if (error || !data?.user) {
+    if (authError || !authData?.user) {
         redirect("/admin/login");
     }
+
+    // Fetch all photos for the Gallery Manager
+    const { data: photos } = await supabase
+        .from("photos")
+        .select("*")
+        .order("created_at", { ascending: false });
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans p-8">
@@ -19,7 +26,7 @@ export default async function AdminDashboard() {
                         <p className="text-sm text-neutral-500">Manage your gallery, upload new works, and configure site settings.</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        <span className="text-sm text-neutral-400">{data.user.email}</span>
+                        <span className="text-sm text-neutral-400">{authData.user.email}</span>
                         <form action="/auth/signout" method="post">
                             <button className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">
                                 Sign Out
@@ -35,7 +42,9 @@ export default async function AdminDashboard() {
                     <AdminUploader />
                 </section>
 
-                {/* We can add a simple list of recently uploaded photos here later */}
+                <section>
+                    <GalleryManager initialPhotos={photos || []} />
+                </section>
             </div>
         </div>
     );
